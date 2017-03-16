@@ -17,12 +17,9 @@
  */
 package cn.edu.hfut.dmic.contentextractor;
 
-import cn.edu.hfut.dmic.webcollector.net.HttpRequest;
-import cn.wanghaomiao.xpath.exception.XpathSyntaxErrorException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +33,9 @@ import org.jsoup.select.Elements;
 import org.jsoup.select.NodeVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import cn.edu.hfut.dmic.webcollector.net.HttpRequest;
+import cn.wanghaomiao.xpath.exception.XpathSyntaxErrorException;
 
 /**
  * ContentExtractor could extract content,title,time from news webpage
@@ -90,9 +90,10 @@ public class ContentExtractor {
                 countInfo.densitySum += childCountInfo.density;
                 countInfo.pCount += childCountInfo.pCount;
             }
+
             countInfo.tagCount++;
             String tagName = tag.tagName();
-            if (tagName.equals("a")) {
+            if (tagName.equals("a") || tagName.equals("img")) {
                 countInfo.linkTextCount = countInfo.textCount;
                 countInfo.linkTagCount++;
             } else if (tagName.equals("p")) {
@@ -157,7 +158,7 @@ public class ContentExtractor {
         Element content = null;
         for (Map.Entry<Element, CountInfo> entry : infoMap.entrySet()) {
             Element tag = entry.getKey();
-            if (tag.tagName().equals("a") || tag == doc.body()) {
+            if (tag.tagName().equals("a") || tag.tagName().equals("p") || tag == doc.body()) {
                 continue;
             }
             double score = computeScore(tag);
@@ -219,7 +220,7 @@ public class ContentExtractor {
         String author = "";
         if (StringUtils.isBlank(srcTime)) {
             author = getAuthor(doc.body().html());
-            if (!StringUtils.isBlank(author)) return author;
+            return author;
         }
         String xpath = "/body//*[self::node()/text()*='" + srcTime + "']";
         XDocument doc1 = new XDocument(doc);
@@ -245,17 +246,20 @@ public class ContentExtractor {
         }
         if (pre != null) {
             author = getShortText(pre.text());
-        } else {
-            Element next = cur.nextElementSibling();
-            while (next != null && noText(next)) {
-                next = next.nextElementSibling();
-            }
-            if (next == null) {
-                return "";
-            }
+        }
+        if (!StringUtils.isBlank(author)) return author;
+        Element next = cur.nextElementSibling();
+        while (next != null && noText(next)) {
+            next = next.nextElementSibling();
+        }
+        if (next != null) {
             author = getShortText(next.text());
         }
-        if(!StringUtils.isBlank(author)) return author;
+        if (!StringUtils.isBlank(author)) return author;
+
+        author = getShortText(parent.html().replace(srcTime, " "));
+        if (!StringUtils.isBlank(author)) return author;
+
         author = getAuthor(doc.body().html());
         return author;
     }
@@ -286,8 +290,11 @@ public class ContentExtractor {
         String reg = "[\\u4e00-\\u9fa5a-zA-Z]{1,10}";
         Pattern authorPattern = Pattern.compile(reg);
         Matcher matcher = authorPattern.matcher(str);
-        if (matcher.find()) {
-            return matcher.group(0);
+        while (matcher.find()) {
+            author = matcher.group(0);
+            if (!(author.contains("分享") || author.contains("手机"))){
+                return author;
+            }
         }
         return "";
     }
@@ -301,17 +308,17 @@ public class ContentExtractor {
     }
 
     protected String getTime(Element contentElement) throws Exception {
-        String regex = "\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-9]{1,2})[^0-9]{1,5}?([0-2]?[1-9])[:：]([0-9]{1,2})[:：]([0-9]{1,2})\\b";
+        String regex = "\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-3]?[0-9])[^0-9]{1,5}?([0-5]?[0-9])[:：]([0-5]?[0-9])[:：]([0-5]?[0-9])\\b";
         String time = getTime(contentElement, regex);
         if (!StringUtils.isBlank(time)) {
             return time;
         }
-        regex = "\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-9]{1,2})[^0-9]{1,5}?([0-2]?[1-9])[:：]([0-9]{1,2})\\b";
+        regex = "\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-3]?[0-9])[^0-9]{1,5}?([0-5]?[0-9])[:：]([0-5]?[0-9])\\b";
         time = getTime(contentElement, regex);
         if (!StringUtils.isBlank(time)) {
             return time;
         }
-        regex = "\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-9]{1,2})\\b";
+        regex = "\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-3]?[0-9])\\b";
         time = getTime(contentElement, regex);
         if (!StringUtils.isBlank(time)) {
             return time;
@@ -408,18 +415,13 @@ public class ContentExtractor {
     protected String getTitle(final Element contentElement) throws Exception {
         final ArrayList<Element> titleList = new ArrayList<Element>();
         final ArrayList<Double> titleSim = new ArrayList<Double>();
-        final AtomicInteger contentIndex = new AtomicInteger();
-        final String metaTitle = doc.title().trim();
+        final String metaTitle = getText(doc.title().trim());
         if (!metaTitle.isEmpty()) {
             doc.body().traverse(new NodeVisitor() {
                 @Override
                 public void head(Node node, int i) {
                     if (node instanceof Element) {
                         Element tag = (Element) node;
-                        if (tag == contentElement) {
-                            contentIndex.set(titleList.size());
-                            return;
-                        }
                         String tagName = tag.tagName();
                         if (Pattern.matches("h[1-6]", tagName)) {
                             String title = tag.text().trim();
@@ -434,7 +436,7 @@ public class ContentExtractor {
                 public void tail(Node node, int i) {
                 }
             });
-            int index = contentIndex.get();
+            int index = titleSim.size();
             if (index > 0) {
                 double maxScore = 0;
                 int maxIndex = -1;
@@ -446,6 +448,9 @@ public class ContentExtractor {
                     }
                 }
                 if (maxIndex != -1) {
+                    if (titleSim.get(maxIndex) < 0.3) {
+                        return getText(metaTitle);
+                    }
                     return titleList.get(maxIndex).text();
                 }
             }
@@ -464,6 +469,10 @@ public class ContentExtractor {
             throw new Exception("title not found");
         }
 
+    }
+
+    private String getText(String metaTitle) {
+        return metaTitle.replaceAll("[-/_–]{1,3}.*", " ");
     }
 
     protected String getTitleByEditDistance(Element contentElement) throws Exception {
@@ -611,29 +620,31 @@ public class ContentExtractor {
     }
 
     /*输入Jsoup的Document，获取结构化新闻信息*/
-    public static News getNewsByDoc(Document doc,boolean flag) throws Exception {
+    public static News getNewsByDoc(Document doc, boolean flag) throws Exception {
         ContentExtractor ce = new ContentExtractor(doc);
         return ce.getNews(flag);
     }
 
     /*输入HTML，获取结构化新闻信息*/
     public static News getNewsByHtml(String html) throws Exception {
+        html = html.replaceAll("\\<!--.*?--\\>", "");
         Document doc = Jsoup.parse(html);
-        News news = getNewsByDoc(doc,true);
-        if(StringUtils.isBlank(news.getTime())){
+        News news = getNewsByDoc(doc, true);
+        if (StringUtils.isBlank(news.getTime())) {
             doc = Jsoup.parse(html);
-            news = getNewsByDoc(doc,false);
+            news = getNewsByDoc(doc, false);
         }
         return news;
     }
 
     /*输入HTML和URL，获取结构化新闻信息*/
     public static News getNewsByHtml(String html, String url) throws Exception {
+        html = html.replaceAll("\\<!--.*?--\\>", "");
         Document doc = Jsoup.parse(html, url);
-        News news = getNewsByDoc(doc,true);
-        if(StringUtils.isBlank(news.getTime())){
+        News news = getNewsByDoc(doc, true);
+        if (StringUtils.isBlank(news.getTime())) {
             doc = Jsoup.parse(html);
-            news = getNewsByDoc(doc,false);
+            news = getNewsByDoc(doc, false);
         }
         return news;
     }
@@ -645,4 +656,7 @@ public class ContentExtractor {
         return getNewsByHtml(html, url);
     }
 
+    public static void main(String[] args) {
+        System.out.println("2017年03月15日 10:30".matches("([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-3]?[0-9])[^0-9]{1,5}?([0-5]?[0-9])[:：]([0-5]?[0-9])"));
+    }
 }

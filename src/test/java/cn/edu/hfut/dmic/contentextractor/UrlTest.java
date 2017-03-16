@@ -11,6 +11,7 @@ public class UrlTest {
     public void testWeiXin() throws Exception {
         News news = ContentExtractor.getNewsByUrl("http://mp.weixin.qq.com/s?__biz=MjM5OTA1MDUyMA==&mid=2655437863&idx=1&sn=67ff6deffc656cc1335b428434fed5ba&chksm=bd7308508a04814685c2a1e67bd4a86e502edc38dc9eda7ebe3d93d8fdf0997dcc7dd45f6047&scene=0#rd");
         Assert.assertEquals("程序员的那些事",news.getAuthor());
+        Assert.assertEquals("技术人员的发展之路",news.getTitle());
     }
 
     @Test
@@ -58,5 +59,10 @@ public class UrlTest {
     public void testShijiazhuang() throws Exception {
         News news = ContentExtractor.getNewsByUrl("http://house.inhe.net/news/2017/0316/105028.shtml");
         Assert.assertEquals("石家庄新闻网",news.getAuthor());
+    }
+    @Test
+    public void testZhenjiang() throws Exception {
+        News news = ContentExtractor.getNewsByUrl("http://zj.fccs.com/news/201703/5114112.shtml");
+        Assert.assertEquals("新城吾悦广场",news.getAuthor());
     }
 }
