@@ -22,7 +22,7 @@ public class Test {
         System.out.println(news.getTime());
         System.out.println("--------");
         System.out.println(news.getAuthor());
-        System.out.println("--------添加2");
+        System.out.println("--------添加22");
         System.out.println(news.getContent());
     }
 }
