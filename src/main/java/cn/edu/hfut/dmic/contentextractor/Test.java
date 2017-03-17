@@ -22,7 +22,8 @@ public class Test {
         System.out.println(news.getTime());
         System.out.println("--------");
         System.out.println(news.getAuthor());
-        System.out.println("--------减少");
+        System.out.println("--------减少2");
+        System.out.println("--------添加2");
         System.out.println(news.getContent());
     }
 }
