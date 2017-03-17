@@ -17,6 +17,7 @@
  */
 package cn.edu.hfut.dmic.contentextractor;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,6 +47,8 @@ public class ContentExtractor {
 
     public static final Logger LOG = LoggerFactory.getLogger(ContentExtractor.class);
 
+    public static DecimalFormat TWONUMBERFORMAT = new DecimalFormat("00");
+
     protected Document doc;
 
     ContentExtractor(Document doc) {
@@ -71,14 +74,19 @@ public class ContentExtractor {
     }
 
     protected void clean() {
-        doc.select("script,noscript,style,iframe,br").remove();
+        doc.select("script,noscript,style,iframe").remove();
     }
 
     protected CountInfo computeInfo(Node node) {
-
         if (node instanceof Element) {
+            node.removeAttr("style").removeAttr("class");
             Element tag = (Element) node;
 
+            if (tag.text().matches(".{1,20}>.{1,10}>.{1,20}")) {
+                CountInfo countInfo = new CountInfo();
+                countInfo.density = -200;
+                return countInfo;
+            }
             CountInfo countInfo = new CountInfo();
             for (Node childNode : tag.childNodes()) {
                 CountInfo childCountInfo = computeInfo(childNode);
@@ -127,7 +135,7 @@ public class ContentExtractor {
     protected double computeScore(Element tag) {
         CountInfo countInfo = infoMap.get(tag);
         double var = Math.sqrt(computeVar(countInfo.leafList) + 1);
-        double score = Math.log(var) * countInfo.densitySum * Math.log(countInfo.textCount - countInfo.linkTextCount + 1) * Math.log10(countInfo.pCount + 2);
+        double score = Math.log(var) * countInfo.densitySum * Math.log(countInfo.textCount - countInfo.linkTextCount + 1) * Math.log10(countInfo.pCount + 10);
         return score;
     }
 
@@ -292,7 +300,7 @@ public class ContentExtractor {
         Matcher matcher = authorPattern.matcher(str);
         while (matcher.find()) {
             author = matcher.group(0);
-            if (!(author.contains("分享") || author.contains("手机"))){
+            if (!(author.contains("分享") || author.contains("手机"))) {
                 return author;
             }
         }
@@ -345,15 +353,15 @@ public class ContentExtractor {
             Matcher matcher = pattern.matcher(currentHtml);
             if (matcher.find()) {
                 srcTime = matcher.group(0);
-                StringBuilder sb = new StringBuilder(matcher.group(1) + "-" + matcher.group(2) + "-" + matcher.group(3));
+                StringBuilder sb = new StringBuilder(matcher.group(1) + "-" + format(matcher.group(2)) + "-" + format(matcher.group(3)));
                 if (matcher.groupCount() >= 4) {
-                    sb.append(" ").append(matcher.group(4));
+                    sb.append(" ").append(format(matcher.group(4)));
                 }
                 if (matcher.groupCount() >= 5) {
-                    sb.append(":").append(matcher.group(5));
+                    sb.append(":").append(format(matcher.group(5)));
                 }
                 if (matcher.groupCount() >= 6) {
-                    sb.append(":").append(matcher.group(6));
+                    sb.append(":").append(format(matcher.group(6)));
                 }
                 return sb.toString();
             }
@@ -362,6 +370,10 @@ public class ContentExtractor {
             }
         }
         return "";
+    }
+
+    private String format(String str) {
+        return TWONUMBERFORMAT.format(Integer.parseInt(str));
     }
 
     @Deprecated
@@ -472,7 +484,7 @@ public class ContentExtractor {
     }
 
     private String getText(String metaTitle) {
-        return metaTitle.replaceAll("[-/_–]{1,3}.*", " ");
+        return metaTitle.replaceAll("[-/_–]{1,3}.*", "");
     }
 
     protected String getTitleByEditDistance(Element contentElement) throws Exception {

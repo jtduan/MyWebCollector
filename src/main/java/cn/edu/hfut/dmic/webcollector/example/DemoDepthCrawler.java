@@ -47,6 +47,8 @@ public class DemoDepthCrawler extends BreadthCrawler{
         }
     }
 
+
+
     @Override
     protected void afterParse(Page page, CrawlDatums next) {
   //当前页面的depth为x，则从当前页面解析的后续任务的depth为x+1

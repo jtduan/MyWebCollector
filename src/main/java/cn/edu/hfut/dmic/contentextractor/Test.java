@@ -15,7 +15,7 @@ public class Test {
 //        News news = ContentExtractor.getNewsByUrl("http://www.365hf.com/news/show-66119.html");
 //        News news = ContentExtractor.getNewsByUrl("http://www.xnfcxx.com/show.asp?id=2548");
 //        News news = ContentExtractor.getNewsByUrl("http://house.inhe.net/news/2017/0316/105028.shtml");
-        News news = ContentExtractor.getNewsByUrl("http://zj.fccs.com/news/201703/5114112.shtml");
+        News news = ContentExtractor.getNewsByUrl("http://www.0831home.com/archive.php?aid=50752");
 
         System.out.println(news.getTitle());
         System.out.println("--------");
