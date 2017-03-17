@@ -15,10 +15,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package cn.edu.hfut.dmic.webcollector.net;
+package cn.edu.hfut.dmic.contentextractor;
 
-import cn.edu.hfut.dmic.webcollector.model.CrawlDatum;
-import cn.edu.hfut.dmic.webcollector.util.Config;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,10 +28,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
+
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,10 +58,10 @@ public class HttpRequest {
 
     protected Map<String, List<String>> headerMap = null;
 
-    protected CrawlDatum crawlDatum = null;
+    protected URL url = null;
 
     public HttpRequest(String url) throws Exception {
-        this.crawlDatum = new CrawlDatum(url);
+        this.url=new URL(url);
         setUserAgent(Config.DEFAULT_USER_AGENT);
     }
 
@@ -70,13 +70,8 @@ public class HttpRequest {
         this.proxy = proxy;
     }
 
-    public HttpRequest(CrawlDatum crawlDatum) throws Exception {
-        this.crawlDatum = crawlDatum;
-        setUserAgent(Config.DEFAULT_USER_AGENT);
-    }
-
-    public HttpRequest(CrawlDatum crawlDatum, Proxy proxy) throws Exception {
-        this(crawlDatum);
+    public HttpRequest(URL url, Proxy proxy) throws Exception {
+        this.url=url;
         this.proxy = proxy;
     }
     
@@ -86,7 +81,6 @@ public class HttpRequest {
     }
 
     public HttpResponse response() throws Exception {
-        URL url = new URL(crawlDatum.url());
         HttpResponse response = new HttpResponse(url);
         int code = -1;
         int maxRedirect = Math.max(0, MAX_REDIRECT);
@@ -215,14 +209,6 @@ public class HttpRequest {
 
     public void setMethod(String method) {
         this.method=method;
-    }
-
-    public CrawlDatum getCrawlDatum() {
-        return crawlDatum;
-    }
-
-    public void setCrawlDatum(CrawlDatum crawlDatum) {
-        this.crawlDatum = crawlDatum;
     }
 
     static {
@@ -409,7 +395,5 @@ public class HttpRequest {
         this.outputData = outputData;
         this.dooutput=true;
     }
-    
-    
 
 }

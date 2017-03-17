@@ -15,15 +15,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package cn.edu.hfut.dmic.webcollector.net;
-
-import cn.edu.hfut.dmic.webcollector.util.CharsetDetector;
+package cn.edu.hfut.dmic.contentextractor;
 
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.slf4j.LoggerFactory;
 
 /**

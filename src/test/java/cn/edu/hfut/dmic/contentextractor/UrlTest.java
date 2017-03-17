@@ -33,14 +33,6 @@ public class UrlTest {
     }
 
     @Test
-    public void testFang() throws Exception {
-        News news = ContentExtractor.getNewsByUrl("http://news.fang.com/2017-03-15/24671917.htm");
-        Assert.assertEquals("房天下",news.getAuthor());
-        Assert.assertEquals("上周楼市整体成交趋稳 城市成交出现两极分化",news.getTitle());
-        Assert.assertEquals("2017-03-15 14:36",news.getTime());
-        Assert.assertEquals(2507,news.getContent().length());
-    }
-    @Test
     public void testToutiao() throws Exception {
         News news = ContentExtractor.getNewsByUrl("http://www.toutiao.com/a6397697145327862018/");
         Assert.assertEquals("野史趣事",news.getAuthor());

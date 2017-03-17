@@ -35,7 +35,6 @@ import org.jsoup.select.NodeVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.edu.hfut.dmic.webcollector.net.HttpRequest;
 import cn.wanghaomiao.xpath.exception.XpathSyntaxErrorException;
 
 /**
@@ -230,9 +229,10 @@ public class ContentExtractor {
             author = getAuthor(doc.body().html());
             return author;
         }
-        String xpath = "/body//*[self::node()/text()*='" + srcTime + "']";
-        XDocument doc1 = new XDocument(doc);
-        Element cur = doc1.selNFirst(xpath).getElement();
+        Element cur = doc.body().select("*:containsOwn("+srcTime+")").first();
+//        String xpath = "/body//*[self::node()/text()*='" + srcTime + "']";
+//        XDocument doc1 = new XDocument(doc);
+//        Element cur = doc1.selNFirst(xpath).getElement();
         if (!noText(cur)) {
             String arr[] = cur.html().split(srcTime);
             for (String text : arr) {
