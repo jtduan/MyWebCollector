@@ -23,7 +23,7 @@ public class Test {
         System.out.println("--------");
         System.out.println(news.getAuthor());
         System.out.println("--------减少23");
-        System.out.println("--------添加2");
+        System.out.println("--------添加23");
         System.out.println(news.getContent());
     }
 }
