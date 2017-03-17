@@ -19,6 +19,8 @@ package cn.edu.hfut.dmic.contentextractor;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -39,8 +41,9 @@ import cn.wanghaomiao.xpath.exception.XpathSyntaxErrorException;
 
 /**
  * ContentExtractor could extract content,title,time from news webpage
+ * 来源于github:WebCollector
+ * https://github.com/CrawlScript/WebCollector
  *
- * @author hu
  */
 public class ContentExtractor {
 
@@ -56,7 +59,12 @@ public class ContentExtractor {
 
     protected HashMap<Element, CountInfo> infoMap = new HashMap<Element, CountInfo>();
 
+    /**
+     * 新加：标记查找到的时间在页面中的原始串，进而找到时间所在的Element，根据时间与作者在一起的特性寻找作者
+     */
     private String srcTime = "";
+
+    private String author_bak = "";
 
     class CountInfo {
 
@@ -72,10 +80,22 @@ public class ContentExtractor {
 
     }
 
+    /**
+     * 去掉删除<br>标签
+     */
     protected void clean() {
         doc.select("script,noscript,style,iframe").remove();
     }
 
+    /**
+     *
+     * @param node
+     * 新加：
+     * 1. 移除style和class属性
+     * 2. 出现当前位置的索引时，降低该块的density提升正文精度
+     * 3. p标签不能单独形成正文
+     * @return
+     */
     protected CountInfo computeInfo(Node node) {
         if (node instanceof Element) {
             node.removeAttr("style").removeAttr("class");
@@ -223,16 +243,31 @@ public class ContentExtractor {
         doc.select("li").remove();
     }
 
+    /**
+     * 添加获取作者接口，优先级:
+     * 1. 挨着时间字段的作者，来源，编辑
+     * 2. 去除阅读量后，在时间字段前面，冒号后面的中文
+     * 3. 在时间字段后面的中文
+     * 4. 全文中编辑，作者，来源 后面的字符串
+     * 5. 挨着时间字段的英文
+     * @return
+     * @throws XpathSyntaxErrorException
+     */
     private String getAuthor() throws XpathSyntaxErrorException {
         String author = "";
         if (StringUtils.isBlank(srcTime)) {
             author = getAuthor(doc.body().html());
             return author;
         }
-        Element cur = doc.body().select("*:containsOwn("+srcTime+")").first();
+        Element cur = doc.body().select("*:containsOwn(" + srcTime + ")").first();
 //        String xpath = "/body//*[self::node()/text()*='" + srcTime + "']";
 //        XDocument doc1 = new XDocument(doc);
 //        Element cur = doc1.selNFirst(xpath).getElement();
+        if (cur == null) {
+            LOG.warn("解析到错误的srcTime=" + srcTime);
+            return "";
+        }
+
         if (!noText(cur)) {
             String arr[] = cur.html().split(srcTime);
             for (String text : arr) {
@@ -241,7 +276,7 @@ public class ContentExtractor {
             }
         }
         Element parent = cur.parent();
-        while (noText(parent)) {
+        while (parent != null && noText(parent)) {
             cur = parent;
             parent = parent.parent();
         }
@@ -269,12 +304,15 @@ public class ContentExtractor {
         if (!StringUtils.isBlank(author)) return author;
 
         author = getAuthor(doc.body().html());
+        if (StringUtils.isBlank(author)) {
+            return author_bak;
+        }
         return author;
     }
 
     private String getAuthor(String str) {
         str = str.replaceAll("</?.*?>", " ").replace("&nbsp;", " ");
-        String reg = "(来源|作者|编辑|稿源|出处)[:：  /]{1,3}(.{1,10}?)[,，  ]";
+        String reg = "(来源|作者|编辑|稿源|出处)[:：  /]{1,3}(.{1,10}?)\\b";
         Pattern authorPattern = Pattern.compile(reg);
         Matcher matcher = authorPattern.matcher(str);
         if (matcher.find()) {
@@ -287,8 +325,7 @@ public class ContentExtractor {
         String author = getAuthor(str);
         if (!StringUtils.isBlank(author)) return author;
 
-        str = str.replaceAll("</?.*?>", " ").replace("&nbsp;", " ");
-        ;
+        str = str.replaceAll("</?.*?>", " ").replace("&nbsp;", " ").replaceAll("阅读[:：  /]{0,3}?(.{2,6}?)\\b", " ");
         while (str.contains(":")) {
             str = str.substring(str.indexOf(":") + 1, str.length());
         }
@@ -300,11 +337,19 @@ public class ContentExtractor {
         Matcher matcher = authorPattern.matcher(str);
         while (matcher.find()) {
             author = matcher.group(0);
+            if (!hasChinese(author)) {
+                author_bak = author;
+                continue;
+            }
             if (!(author.contains("分享") || author.contains("手机"))) {
                 return author;
             }
         }
         return "";
+    }
+
+    private boolean hasChinese(String author) {
+        return author.matches(".*[\\u4e00-\\u9fa5].*");
     }
 
     private boolean noText(Element ele) {
@@ -315,6 +360,13 @@ public class ContentExtractor {
         return str.replace(srcTime, "").matches("[^\\u4e00-\\u9fa5a-zA-Z]*");
     }
 
+    /**
+     * 多次通过匹配寻找时间
+     * 先去除<li>标签寻找其他标签中的时间，若找不到再在全文寻找时间
+     * @param contentElement
+     * @return
+     * @throws Exception
+     */
     protected String getTime(Element contentElement) throws Exception {
         String regex = "\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-3]?[0-9])[^0-9]{1,5}?([0-5]?[0-9])[:：]([0-5]?[0-9])[:：]([0-5]?[0-9])\\b";
         String time = getTime(contentElement, regex);
@@ -326,7 +378,7 @@ public class ContentExtractor {
         if (!StringUtils.isBlank(time)) {
             return time;
         }
-        regex = "\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-3]?[0-9])\\b";
+        regex = "\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-3]?[0-9])[^0-9]{0,5}?\\b";
         time = getTime(contentElement, regex);
         if (!StringUtils.isBlank(time)) {
             return time;
@@ -376,36 +428,6 @@ public class ContentExtractor {
         return TWONUMBERFORMAT.format(Integer.parseInt(str));
     }
 
-    @Deprecated
-    protected String getDate(Element contentElement) throws Exception {
-        String regex = "\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-9]{1,2})\\b";
-        Pattern pattern = Pattern.compile(regex);
-        Element current = contentElement;
-        for (int i = 0; i < 2; i++) {
-            if (current != null && current != doc.body()) {
-                Element parent = current.parent();
-                if (parent != null) {
-                    current = parent;
-                }
-            }
-        }
-        for (int i = 0; i < 6; i++) {
-            if (current == null) {
-                break;
-            }
-            String currentHtml = current.outerHtml();
-            Matcher matcher = pattern.matcher(currentHtml);
-            if (matcher.find()) {
-                srcTime = matcher.group(0);
-                return matcher.group(1) + "-" + matcher.group(2) + "-" + matcher.group(3);
-            }
-            if (current != doc.body()) {
-                current = current.parent();
-            }
-        }
-        throw new Exception("date not found");
-    }
-
     protected double strSim(String a, String b) {
         int len1 = a.length();
         int len2 = b.length();
@@ -424,6 +446,12 @@ public class ContentExtractor {
         return (lcs(a, b) + 0.0) / Math.max(len1, len2);
     }
 
+    /**
+     * 新加：文中与metaTitle匹配度过低时优先使用metaTitle,若metaTitle不符合条件再根据排序规则选择title
+     * @param contentElement
+     * @return
+     * @throws Exception
+     */
     protected String getTitle(final Element contentElement) throws Exception {
         final ArrayList<Element> titleList = new ArrayList<Element>();
         final ArrayList<Double> titleSim = new ArrayList<Double>();
@@ -459,12 +487,32 @@ public class ContentExtractor {
                         maxIndex = i;
                     }
                 }
-                if (maxIndex != -1) {
-                    if (titleSim.get(maxIndex) < 0.3) {
-                        return getText(metaTitle);
+
+                if (maxIndex == -1 || titleSim.get(maxIndex) < 0.3) {
+                    String title = getText(metaTitle);
+                    if (!title.endsWith("网") && title.length() > 7) {
+                        return title;
                     }
-                    return titleList.get(maxIndex).text();
+                    Collections.sort(titleList, new Comparator<Element>() {
+                        @Override
+                        public int compare(Element o1, Element o2) {
+                            int len1 = 1;
+                            int len2 = 1;
+                            if (o1.text().replaceAll("[^\\u4e00-\\u9fa5]", "").length() > 26 || o1.text().replaceAll("[^\\u4e00-\\u9fa5]", "").length() < 7) {
+                                len1 = 0;
+                            }
+                            if (o2.text().replaceAll("[^\\u4e00-\\u9fa5]", "").length() > 26 || o2.text().replaceAll("[^\\u4e00-\\u9fa5]", "").length() < 7) {
+                                len2 = 0;
+                            }
+                            if (len1 == len2) {
+                                return o1.tagName().charAt(1) - o2.tagName().charAt(1);
+                            }
+                            return len2 - len1;
+                        }
+                    });
+                    return getText(titleList.get(0).text());
                 }
+                return titleList.get(maxIndex).text();
             }
         }
 
@@ -669,6 +717,6 @@ public class ContentExtractor {
     }
 
     public static void main(String[] args) {
-        System.out.println("2017年03月15日 10:30".matches("([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-3]?[0-9])[^0-9]{1,5}?([0-5]?[0-9])[:：]([0-5]?[0-9])"));
+        System.out.println("2017年03月17日".matches("\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-3]?[0-9])[^0-9]{1,5}?\\b"));
     }
 }

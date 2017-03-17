@@ -4,14 +4,62 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 /**
- * Created by jintaoduan on 2017/3/16.
+ * http://fs.news.anjuke.com/news-373788.html?from=leading_toutiao_view
  */
 public class UrlTest {
 
     @Test
-    public void testAll() throws Exception {
-        test("http://news.fang.com/2017-03-15/24671917.htm","房天下","上周楼市整体成交趋稳 城市成交出现两极分化","2017-03-15 14:36",2507);
+    public void test() throws Exception {
         test("http://www.0831home.com/archive.php?aid=50593","三江房产网","快来认宜宾临港这几条新路！要通大学城和滨江大道！","2017-03-13 15:50",5517);
+    }
+    @Test
+    public void test1() throws Exception {
+        test("http://news.fang.com/2017-03-15/24671917.htm","房天下","上周楼市整体成交趋稳 城市成交出现两极分化","2017-03-15 14:36",2507);
+    }
+
+    @Test
+    public void test3() throws Exception {
+        test("http://www.guifun.com/news/article/58854.html","广西新闻网综合","发展\"全域游\" 广西推动三大国际旅游目的地建设","2017-03-17",3144);
+    }
+    @Test
+    public void test4() throws Exception {
+        test("http://sh.news.anjuke.com/louping-373722-pan250263.html?from=leading_toutiao_view","熊一蒙","嘉定北价值洼地，坐拥北上海新地标","2017-03-16",2899);
+    }
+    @Test
+    public void test5() throws Exception {
+        test("http://sh.news.anjuke.com/hot-373705.html?from=leading_toutiao_view","安居客","【新城盛世】身临其境，未来视界","2017-03-16 13:22",805);
+    }
+    @Test
+    public void test6() throws Exception {
+        test("http://jz.fczx.com/news/42119-1.html","观点地产网","融创8.44亿元揽下浙江嘉兴平湖4宗地 平均溢价率309%","2017-03-14",617);
+    }
+    @Test
+    public void test7() throws Exception {
+        test("http://news.huaian.com/index-htm-m-cms-q-view-id-3771.html","稻香老农民","买房要小心这6大房产纠纷 千万别中招哟","2016-04-11 09:35",3800);
+    }
+    @Test
+    public void test2() throws Exception {
+        test("http://www.373f.com/xinfang/gfzx/huodong/17031619.html","新乡房产网","3.18长德“多彩生活 放飞梦想”风筝彩绘DIY盛情邀约","2017-03-16 13:53:06",2469);
+    }
+    @Test
+    public void test8() throws Exception {
+        test("http://www.0579fw.com/news/detail-news-74712.html","金华房网","厉害了！红星地产荣膺中国商业地产亚军 房地产百强企业第三十八名","2017-03-17 10:37:13",3115);
+    }
+    @Test
+    public void test9() throws Exception {
+        test("http://news.huaian.com/index-htm-m-cms-q-view-id-3832.html","伊小朵","无理由退房 全国8折大优惠 恒大名都配套全线升级 领航大淮安品质生活","2016-05-11 14:25",4312);
+    }
+    @Test
+    public void test10() throws Exception {
+        test("http://www.0579fw.com/news/detail-news-74707.html","每日经济新闻","披上“消费贷”马甲 “首付贷”疑重现广州楼市","2017-03-17 09:32:55",2708);
+    }
+    @Test
+    public void test11() throws Exception {
+        test("http://www.hhfcw.com/news_content/17213/","怀化房产网","【恒大帝景】多功能综合楼 革新品质人居理念","2017-02-24 11:02:47",2838);
+    }
+    @Test
+    public void test12() throws Exception {
+        test("http://www.zmdfcw.com/news/news_info/384256.html","驻马店房产网","驻马店2017年3月14日商品房预售登记60套及房价4253元","2017-03-15",1956);
     }
 
     public void test(String url, String author,String title,String time,int words) throws Exception {
@@ -61,9 +109,9 @@ public class UrlTest {
     public void testJiujiang() throws Exception {
         News news = ContentExtractor.getNewsByUrl("http://www.zzjjw.cn/news/show-65591.html");
         Assert.assertEquals("浔阳晚报",news.getAuthor());
-        Assert.assertEquals("技术人员的发展之路",news.getTitle());
-        Assert.assertEquals("2017-03-16",news.getTime());
-        Assert.assertEquals(3337,news.getContent().length());
+        Assert.assertEquals("女老师“扎堆”生二孩 愁坏校长",news.getTitle());
+        Assert.assertEquals("2017-03-16 10:09:23",news.getTime());
+        Assert.assertEquals(2778,news.getContent().length());
     }
     @Test
     public void testXinjiang() throws Exception {
