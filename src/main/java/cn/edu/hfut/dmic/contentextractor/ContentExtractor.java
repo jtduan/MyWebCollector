@@ -43,7 +43,6 @@ import cn.wanghaomiao.xpath.exception.XpathSyntaxErrorException;
  * ContentExtractor could extract content,title,time from news webpage
  * 来源于github:WebCollector
  * https://github.com/CrawlScript/WebCollector
- *
  */
 public class ContentExtractor {
 
@@ -88,12 +87,10 @@ public class ContentExtractor {
     }
 
     /**
-     *
-     * @param node
-     * 新加：
-     * 1. 移除style和class属性
-     * 2. 出现当前位置的索引时，降低该块的density提升正文精度
-     * 3. p标签不能单独形成正文
+     * @param node 新加：
+     *             1. 移除style和class属性
+     *             2. 出现当前位置的索引时，降低该块的density提升正文精度
+     *             3. p标签不能单独形成正文
      * @return
      */
     protected CountInfo computeInfo(Node node) {
@@ -236,6 +233,7 @@ public class ContentExtractor {
         } catch (Exception ex) {
             LOG.info("title extraction failed", ex);
         }
+        news.setSrcTime(srcTime);
         return news;
     }
 
@@ -250,6 +248,7 @@ public class ContentExtractor {
      * 3. 在时间字段后面的中文
      * 4. 全文中编辑，作者，来源 后面的字符串
      * 5. 挨着时间字段的英文
+     *
      * @return
      * @throws XpathSyntaxErrorException
      */
@@ -332,7 +331,7 @@ public class ContentExtractor {
         while (str.contains("：")) {
             str = str.substring(str.indexOf("：") + 1, str.length());
         }
-        String reg = "[\\u4e00-\\u9fa5a-zA-Z]{1,10}";
+        String reg = "[\\u4e00-\\u9fa5a-zA-Z]{1,15}";
         Pattern authorPattern = Pattern.compile(reg);
         Matcher matcher = authorPattern.matcher(str);
         while (matcher.find()) {
@@ -363,6 +362,7 @@ public class ContentExtractor {
     /**
      * 多次通过匹配寻找时间
      * 先去除<li>标签寻找其他标签中的时间，若找不到再在全文寻找时间
+     *
      * @param contentElement
      * @return
      * @throws Exception
@@ -448,6 +448,7 @@ public class ContentExtractor {
 
     /**
      * 新加：文中与metaTitle匹配度过低时优先使用metaTitle,若metaTitle不符合条件再根据排序规则选择title
+     *
      * @param contentElement
      * @return
      * @throws Exception
@@ -477,7 +478,7 @@ public class ContentExtractor {
                 }
             });
             int index = titleSim.size();
-            if (index > 0) {
+            if (index >= 0) {
                 double maxScore = 0;
                 int maxIndex = -1;
                 for (int i = 0; i < index; i++) {
@@ -532,7 +533,7 @@ public class ContentExtractor {
     }
 
     private String getText(String metaTitle) {
-        return metaTitle.replaceAll("[-/_–]{1,3}.*", "");
+        return metaTitle.replaceAll("[-/_–|]{1,3}.*", "");
     }
 
     protected String getTitleByEditDistance(Element contentElement) throws Exception {

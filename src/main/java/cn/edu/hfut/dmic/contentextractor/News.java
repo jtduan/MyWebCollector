@@ -28,6 +28,7 @@ public class News {
     protected String title = null;
     protected String content = null;
     protected String time = null;
+    protected String srcTime = null;
     protected String author = null;
 
     protected Element contentElement = null;
@@ -73,6 +74,14 @@ public class News {
         this.author = author;
     }
 
+    public String getSrcTime() {
+        return srcTime;
+    }
+
+    public void setSrcTime(String srcTime) {
+        this.srcTime = srcTime;
+    }
+
     @Override
     public String toString() {
         return "URL:\n" + url + "\nTITLE:\n" + title + "\nTIME:\n" + time + "\nAUTHOR:\n" + author + "\nCONTENT:\n" + getContent() + "\nCONTENT(SOURCE):\n" + contentElement;
@@ -87,5 +96,35 @@ public class News {
         if (contentElement != null) {
             content = contentElement.html();
         }
+    }
+
+    public String getClearContent(){
+        while(true){
+            Element first = contentElement.children().first();
+            if(canRemove(first)){
+                first.remove();
+            }
+            break;
+        }
+        while(true){
+            Element last = contentElement.children().last();
+            if(canRemove(last)){
+                last.remove();
+            }
+            break;
+        }
+        return contentElement.html();
+    }
+
+    private boolean canRemove(Element first) {
+        if(first.text().isEmpty()) return true;
+        if(first.text().equals(title)) return true;
+        if(first.text().contains(srcTime)) return true;
+        if(first.text().matches("^\\W{0,3}摘要\\W{1,3}.*")) return true;
+
+        if(first.text().length()<40 && first.text().contains("页")) return true;
+        if(first.text().length()<40 && first.text().contains("分享")) return true;
+        if(first.text().matches("^\\W{0,3}免责声明\\W{1,3}.*")) return true;
+        return false;
     }
 }
