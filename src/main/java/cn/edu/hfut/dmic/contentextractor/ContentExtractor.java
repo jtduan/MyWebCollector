@@ -148,14 +148,14 @@ public class ContentExtractor {
         }
     }
 
-    protected double computeScore(Element tag) {
+    private double computeScore(Element tag) {
         CountInfo countInfo = infoMap.get(tag);
         double var = Math.sqrt(computeVar(countInfo.leafList) + 1);
         double score = Math.log(var) * countInfo.densitySum * Math.log(countInfo.textCount - countInfo.linkTextCount + 1) * Math.log10(countInfo.pCount + 10);
         return score;
     }
 
-    protected double computeVar(ArrayList<Integer> data) {
+    private double computeVar(ArrayList<Integer> data) {
         if (data.size() == 0) {
             return 0;
         }
@@ -175,7 +175,7 @@ public class ContentExtractor {
         return sum;
     }
 
-    public Element getContentElement() throws Exception {
+    private Element getContentElement() throws Exception {
         clean();
         computeInfo(doc.body());
         double maxScore = 0;
@@ -197,7 +197,7 @@ public class ContentExtractor {
         return content;
     }
 
-    public News getNews(boolean flag) throws Exception {
+    private News getNews(boolean flag) throws Exception {
         News news = new News();
         Element contentElement;
         try {
@@ -264,7 +264,8 @@ public class ContentExtractor {
 //        Element cur = doc1.selNFirst(xpath).getElement();
         if (cur == null) {
             LOG.warn("解析到错误的srcTime=" + srcTime);
-            return "";
+            author = getAuthor(doc.body().html());
+            return author;
         }
 
         if (!noText(cur)) {
@@ -368,17 +369,17 @@ public class ContentExtractor {
      * @throws Exception
      */
     protected String getTime(Element contentElement) throws Exception {
-        String regex = "\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-3]?[0-9])[^0-9]{1,5}?([0-5]?[0-9])[:：]([0-5]?[0-9])[:：]([0-5]?[0-9])\\b";
+        String regex = "\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-3]?[0-9])[^0-9]{1,6}?([0-5]?[0-9])[:：]([0-5]?[0-9])[:：]([0-5]?[0-9])\\b";
         String time = getTime(contentElement, regex);
         if (!StringUtils.isBlank(time)) {
             return time;
         }
-        regex = "\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-3]?[0-9])[^0-9]{1,5}?([0-5]?[0-9])[:：]([0-5]?[0-9])\\b";
+        regex = "\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-3]?[0-9])[^0-9]{1,6}?([0-5]?[0-9])[:：]([0-5]?[0-9])\\b";
         time = getTime(contentElement, regex);
         if (!StringUtils.isBlank(time)) {
             return time;
         }
-        regex = "\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-3]?[0-9])[^0-9]{0,5}?\\b";
+        regex = "\\b([1-2][0-9]{3})[^0-9]{1,5}?([0-1]?[0-9])[^0-9]{1,5}?([0-3]?[0-9])[^0-9]{0,6}?\\b";
         time = getTime(contentElement, regex);
         if (!StringUtils.isBlank(time)) {
             return time;
@@ -517,6 +518,9 @@ public class ContentExtractor {
             }
         }
 
+        /**
+         * 几乎不能能走到这
+         */
         Elements titles = doc.body().select("*[id^=title],*[id$=title],*[class^=title],*[class$=title]");
         if (titles.size() > 0) {
             String title = titles.first().text();
@@ -630,65 +634,15 @@ public class ContentExtractor {
         return dp[len1][len2];
     }
 
-    /*输入Jsoup的Document，获取正文所在Element*/
-    public static Element getContentElementByDoc(Document doc) throws Exception {
-        ContentExtractor ce = new ContentExtractor(doc);
-        return ce.getContentElement();
-    }
-
-    /*输入HTML，获取正文所在Element*/
-    public static Element getContentElementByHtml(String html) throws Exception {
-        Document doc = Jsoup.parse(html);
-        return getContentElementByDoc(doc);
-    }
-
-    /*输入HTML和URL，获取正文所在Element*/
-    public static Element getContentElementByHtml(String html, String url) throws Exception {
-        Document doc = Jsoup.parse(html, url);
-        return getContentElementByDoc(doc);
-    }
-
-    /*输入URL，获取正文所在Element*/
-    public static Element getContentElementByUrl(String url) throws Exception {
-        HttpRequest request = new HttpRequest(url);
-        String html = request.response().decode();
-        return getContentElementByHtml(html, url);
-    }
-
-    /*输入Jsoup的Document，获取正文文本*/
-    public static String getContentByDoc(Document doc) throws Exception {
-        ContentExtractor ce = new ContentExtractor(doc);
-        return ce.getContentElement().text();
-    }
-
-    /*输入HTML，获取正文文本*/
-    public static String getContentByHtml(String html) throws Exception {
-        Document doc = Jsoup.parse(html);
-        return getContentElementByDoc(doc).text();
-    }
-
-    /*输入HTML和URL，获取正文文本*/
-    public static String getContentByHtml(String html, String url) throws Exception {
-        Document doc = Jsoup.parse(html, url);
-        return getContentElementByDoc(doc).text();
-    }
-
-    /*输入URL，获取正文文本*/
-    public static String getContentByUrl(String url) throws Exception {
-        HttpRequest request = new HttpRequest(url);
-        String html = request.response().decode();
-        return getContentByHtml(html, url);
-    }
-
     /*输入Jsoup的Document，获取结构化新闻信息*/
-    public static News getNewsByDoc(Document doc, boolean flag) throws Exception {
+    private static News getNewsByDoc(Document doc, boolean flag) throws Exception {
         ContentExtractor ce = new ContentExtractor(doc);
         return ce.getNews(flag);
     }
 
     /*输入HTML，获取结构化新闻信息*/
-    public static News getNewsByHtml(String html) throws Exception {
-        html = html.replaceAll("\\<!--.*?--\\>", "");
+    private static News getNewsByHtml(String html) throws Exception {
+        html = html.replaceAll("\\<!--.*?--\\>", "").replace(" ", " ");
         Document doc = Jsoup.parse(html);
         News news = getNewsByDoc(doc, true);
         if (StringUtils.isBlank(news.getTime())) {
@@ -699,12 +653,15 @@ public class ContentExtractor {
     }
 
     /*输入HTML和URL，获取结构化新闻信息*/
-    public static News getNewsByHtml(String html, String url) throws Exception {
-        html = html.replaceAll("\\<!--.*?--\\>", "");
+    private static News getNewsByHtml(String html, String url) throws Exception {
+        if (StringUtils.isBlank(url)) {
+            return getNewsByHtml(html);
+        }
+        html = html.replaceAll("\\<!--.*?--\\>", "").replace(" ", " ");
         Document doc = Jsoup.parse(html, url);
         News news = getNewsByDoc(doc, true);
         if (StringUtils.isBlank(news.getTime())) {
-            doc = Jsoup.parse(html);
+            doc = Jsoup.parse(html, url);
             news = getNewsByDoc(doc, false);
         }
         return news;

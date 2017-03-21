@@ -43,7 +43,7 @@ public class UrlTest {
     }
     @Test
     public void test8() throws Exception {
-        test("http://www.0579fw.com/news/detail-news-74712.html","金华房网","厉害了！红星地产荣膺中国商业地产亚军 房地产百强企业第三十八名","2017-03-17 10:37:13",3115);
+        test("http://www.0579fw.com/news/detail-news-74712.html","金华房网","厉害了！红星地产荣膺中国商业地产亚军 房地产百强企业第三十八名","2017-03-17 10:37:13",3047);
     }
     @Test
     public void test9() throws Exception {
@@ -60,6 +60,22 @@ public class UrlTest {
     @Test
     public void test12() throws Exception {
         test("http://www.zmdfcw.com/news/news_info/384256.html","驻马店房产网","驻马店2017年3月14日商品房预售登记60套及房价4253元","2017-03-15",1956);
+    }
+    @Test
+    public void test13() throws Exception {
+        test("http://www.nyloushi.com/newscenter/shownews.asp?newsid=64846","南阳楼市网","一夜醒来，广州、郑州、石家庄……这些城市都限购了","2017-03-18 10:30",3456);
+    }
+    @Test
+    public void test14() throws Exception {
+        test("http://yanan.loupan.com/html/news/201610/2450200.html","zhangyunxiang","宝能姚建辉再遭深圳商人实名举报","2016-10-13",2437);
+    }
+    @Test
+    public void test15() throws Exception {
+        test("http://www.hxdctz.com/a/20160830/32680.html","海西地产网","泉州哪里最值钱？ 政府新定的基准地价有些区域破万了！","2016-08-30 12:37",959);
+    }
+    @Test
+    public void test16() throws Exception {
+        test("http://www.lsfc.net.cn/news/201703/595639_1.html","三江都市报","2017年乐山楼市开局之变：乐山迈入“大盘2.0时代”","2017-03-14",2668);
     }
 
     public void test(String url, String author,String title,String time,int words) throws Exception {
@@ -94,7 +110,7 @@ public class UrlTest {
         Assert.assertEquals("张婵",news.getAuthor());
         Assert.assertEquals("阳信将举办水韵梨乡（国际）音乐节",news.getTitle());
         Assert.assertEquals("2017-03-16",news.getTime());
-        Assert.assertEquals(669,news.getContent().length());
+        Assert.assertEquals(684,news.getContent().length());
     }
     @Test
     public void testPuyang() throws Exception {
