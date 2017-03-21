@@ -259,9 +259,6 @@ public class ContentExtractor {
             return author;
         }
         Element cur = doc.body().select("*:containsOwn(" + srcTime + ")").first();
-//        String xpath = "/body//*[self::node()/text()*='" + srcTime + "']";
-//        XDocument doc1 = new XDocument(doc);
-//        Element cur = doc1.selNFirst(xpath).getElement();
         if (cur == null) {
             LOG.warn("解析到错误的srcTime=" + srcTime);
             author = getAuthor(doc.body().html());
